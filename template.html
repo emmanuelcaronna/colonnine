@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="it"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ricarica gratis · Palermo, Partinico, Borgetto</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--bg:#0f1115;--card:#171a21;--tx:#e9ecf1;--mu:#9aa3b2;--verde:#22c55e;--ambra:#f5a524;--grigio:#6b7280;--bordo:#262b36}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:15px/1.4 -apple-system,system-ui,Segoe UI,Roboto,sans-serif}
+#app{display:flex;height:100%}
+#map{flex:1}
+aside{width:380px;max-width:100%;min-width:0;overflow:auto;border-right:1px solid var(--bordo);padding:16px}
+h1{font-size:19px;margin:0 0 4px}
+.sub{color:var(--mu);font-size:13px;margin:0 0 12px}
+.filtri{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.filtri label{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--bordo);border-radius:20px;padding:5px 10px;font-size:13px;cursor:pointer}
+.pt{width:11px;height:11px;border-radius:50%;display:inline-block;flex:none}
+.v{background:var(--verde)}.a{background:var(--ambra)}.g{background:var(--grigio)}
+.voce{background:var(--card);border:1px solid var(--bordo);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer}
+.voce:hover{border-color:#3a4252}
+.voce b{display:flex;align-items:center;gap:7px}
+.voce .ind{color:var(--mu);font-size:13px}
+.sez{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin:14px 0 6px}
+.nota{font-size:12px;color:var(--mu);border-top:1px solid var(--bordo);margin-top:14px;padding-top:10px}
+.leaflet-popup-content{font:14px/1.4 -apple-system,system-ui,sans-serif;margin:12px 14px}
+.leaflet-popup-content b{font-size:15px}
+.fonti{color:#555;font-size:12px;margin-top:6px}
+.nav{display:inline-block;margin-top:8px;background:#1a73e8;color:#fff!important;text-decoration:none;padding:6px 10px;border-radius:6px;font-weight:600}
+@media (max-width:760px){#app{flex-direction:column-reverse}aside{width:100%;height:42%;border-right:0;border-top:1px solid var(--bordo)}#map{height:58%}}
+</style></head><body>
+<div id="app">
+<aside>
+<h1>⚡ Ricarica gratis</h1>
+<p class="sub">Palermo, Partinico, Borgetto (e Carini lungo la strada) · aggiornata al __DATA__</p>
+<div class="filtri">
+<label><input type="checkbox" id="fv" checked><span class="pt v"></span>Gratis</label>
+<label><input type="checkbox" id="fa" checked><span class="pt a"></span>Da verificare</label>
+<label><input type="checkbox" id="fg"><span class="pt g"></span>A pagamento (__NPAG__)</label>
+</div>
+<div id="lista"></div>
+<div class="nota">
+<b>Come è fatta.</b> Verde = il negozio dichiara la colonnina nella sua scheda ufficiale e la catena (Lidl) la offre gratis ai clienti: 22 kW, circa 30 minuti, negli orari di apertura. Ambra = indizi di gratuità senza conferma: si guarda sul posto o in app prima di contarci. Grigio = tutte le altre colonnine pubbliche della Piattaforma Unica Nazionale del Ministero (MASE/GSE), a pagamento.<br><br>
+<b>Partinico e Borgetto:</b> nessuna colonnina gratuita confermata. Il Lidl di Partinico (SS113) non ha la colonnina in scheda. La più vicina sicura è il Lidl di Carini.<br><br>
+Fonti: Piattaforma Unica Nazionale, schede dei negozi Lidl, OpenStreetMap, Energeek, Electromaps.
+</div>
+</aside>
+<div id="map"></div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const G=__GRATIS__, P=__PAG__;
+const map=L.map('map',{zoomControl:true}).setView([38.11,13.25],11);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
+const col={gratis:'#22c55e',forse:'#f5a524'};
+const nav=(la,lo)=>`<a class="nav" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${la},${lo}">Portami qui</a>`;
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const lv=L.layerGroup().addTo(map), la=L.layerGroup().addTo(map), lg=L.layerGroup();
+const mk={};
+G.forEach((x,i)=>{
+  const m=L.circleMarker([x.lat,x.lon],{radius:10,color:'#fff',weight:2,fillColor:col[x.liv],fillOpacity:1})
+   .bindPopup(`<b>${esc(x.nome)}</b><br>${esc(x.ind)}<br><br>${esc(x.cond)}<div class="fonti">${esc(x.fonti)}</div>${nav(x.lat,x.lon)}`);
+  (x.liv==='gratis'?lv:la).addLayer(m); mk[i]=m;
+});
+P.forEach(x=>{
+  L.circleMarker([x.lat,x.lon],{radius:5,color:'#4b5563',weight:1,fillColor:'#9ca3af',fillOpacity:.85})
+   .bindPopup(`<b>${esc(x.op)}</b><br>${esc(x.ind)}<br>${x.n} prese, fino a ${x.kw} kW · ${x.ok} funzionanti ora<br><span class="fonti">A pagamento · Piattaforma Unica Nazionale</span><br>${nav(x.lat,x.lon)}`)
+   .addTo(lg);
+});
+const lista=document.getElementById('lista');
+[['gratis','Gratis','v'],['forse','Da verificare','a']].forEach(([k,t,c])=>{
+  const h=document.createElement('div');h.className='sez';h.textContent=t;lista.appendChild(h);
+  G.forEach((x,i)=>{ if(x.liv!==k)return;
+    const d=document.createElement('div');d.className='voce';
+    d.innerHTML=`<b><span class="pt ${c}"></span>${esc(x.nome)}</b><div class="ind">${esc(x.ind)}</div>`;
+    d.onclick=()=>{map.setView([x.lat,x.lon],15);mk[i].openPopup();};
+    lista.appendChild(d);
+  });
+});
+const t=(id,l)=>document.getElementById(id).onchange=e=>e.target.checked?l.addTo(map):map.removeLayer(l);
+t('fv',lv);t('fa',la);t('fg',lg);
+</script></body></html>
